@@ -1,0 +1,117 @@
+{
+  "rules": [
+    {
+      "id": "certificate_required",
+      "name": "Certificado Obligatorio",
+      "condition": {
+        "motivo": ["ART", "Licencia Enfermedad Familiar", "Licencia Enfermedad Personal"],
+        "certificate_uploaded": false
+      },
+      "action": "add_observacion",
+      "message": "Falta certificado médico obligatorio",
+      "priority": 1,
+      "severity": "warning"
+    },
+    {
+      "id": "certificate_deadline",
+      "name": "Vencimiento Certificado",
+      "condition": {
+        "certificate_deadline": "overdue",
+        "certificate_uploaded": false
+      },
+      "action": "mark_sanction",
+      "message": "Certificado no entregado en plazo - SANCIÓN aplicada",
+      "priority": 2,
+      "severity": "error"
+    },
+    {
+      "id": "excessive_duration",
+      "name": "Duración Excesiva",
+      "condition": {
+        "ART": 365,
+        "Licencia Enfermedad Familiar": 30,
+        "Licencia Enfermedad Personal": 90,
+        "Licencia por Fallecimiento Familiar": 5,
+        "Licencia por Matrimonio": 10,
+        "Licencia por Nacimiento": 2,
+        "Licencia por Paternidad": 15
+      },
+      "action": "flag_review",
+      "message": "Duración excede el máximo permitido - Requiere autorización",
+      "priority": 3,
+      "severity": "warning"
+    },
+    {
+      "id": "provisional_employee",
+      "name": "Empleado No Validado",
+      "condition": {
+        "validation_status": "provisional"
+      },
+      "action": "require_hr_validation",
+      "message": "Registro provisional - Requiere validación de RRHH",
+      "priority": 4,
+      "severity": "info"
+    },
+    {
+      "id": "frequent_absences",
+      "name": "Ausencias Frecuentes",
+      "condition": {
+        "absences_last_30_days": "> 3"
+      },
+      "action": "flag_pattern",
+      "message": "Patrón de ausencias frecuentes detectado",
+      "priority": 5,
+      "severity": "warning"
+    }
+  ],
+  "motivo_rules": {
+    "ART": {
+      "descripcion": "Accidente de trabajo",
+      "requiere_certificado": true,
+      "duracion_maxima": 365,
+      "deadline_horas": 24
+    },
+    "Licencia Enfermedad Familiar": {
+      "descripcion": "Cuidado de familiar enfermo",
+      "requiere_certificado": true,
+      "duracion_maxima": 30,
+      "deadline_horas": 24
+    },
+    "Licencia Enfermedad Personal": {
+      "descripcion": "Enfermedad personal del empleado",
+      "requiere_certificado": true,
+      "duracion_maxima": 90,
+      "deadline_horas": 24
+    },
+    "Licencia por Fallecimiento Familiar": {
+      "descripcion": "Fallecimiento de familiar directo",
+      "requiere_certificado": false,
+      "duracion_maxima": 5,
+      "deadline_horas": null
+    },
+    "Licencia por Matrimonio": {
+      "descripcion": "Matrimonio del empleado",
+      "requiere_certificado": false,
+      "duracion_maxima": 10,
+      "deadline_horas": null
+    },
+    "Licencia por Nacimiento": {
+      "descripcion": "Nacimiento de hijo",
+      "requiere_certificado": false,
+      "duracion_maxima": 2,
+      "deadline_horas": null
+    },
+    "Licencia por Paternidad": {
+      "descripcion": "Paternidad extendida",
+      "requiere_certificado": false,
+      "duracion_maxima": 15,
+      "deadline_horas": null
+    },
+    "Permiso Gremial": {
+      "descripcion": "Actividades sindicales",
+      "requiere_certificado": false,
+      "duracion_maxima": null,
+      "deadline_horas": null
+    }
+  }
+}

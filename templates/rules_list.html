@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Reglas - Sistema Experto</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 8px 8px 0 0;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        .toolbar {
+            padding: 20px 30px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .search-box {
+            flex: 1;
+            min-width: 300px;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .filters select {
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #ffc107; color: #212529; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn:hover { transform: translateY(-1px); opacity: 0.9; }
+        
+        .rules-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .rules-table th,
+        .rules-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        .rules-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+        .rules-table tr:hover {
+            background: #f8f9fa;
+        }
+        .rule-id {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #495057;
+        }
+        .rule-name {
+            font-weight: 500;
+            color: #212529;
+        }
+        .rule-condition {
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            color: #6c757d;
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .rule-action {
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            color: #495057;
+            max-width: 250px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .priority-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .priority-high { background: #fee2e2; color: #dc2626; }
+        .priority-medium { background: #fef3c7; color: #d97706; }
+        .priority-low { background: #dcfce7; color: #16a34a; }
+        
+        .severity-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .severity-error { background: #fee2e2; color: #dc2626; }
+        .severity-warning { background: #fef3c7; color: #d97706; }
+        .severity-info { background: #dbeafe; color: #2563eb; }
+        
+        .actions {
+            display: flex;
+            gap: 5px;
+        }
+        .actions .btn {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 30px;
+            border: none;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover { color: black; }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+        .empty-state h3 {
+            margin-bottom: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .container { margin: 10px; }
+            .toolbar { flex-direction: column; align-items: stretch; }
+            .search-box { min-width: auto; }
+            .rules-table { font-size: 12px; }
+            .rule-condition, .rule-action { max-width: 150px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header con estadísticas -->
+        <div class="header">
+            <h1>🧠 Reglas del Sistema Experto</h1>
+            <div class="stats" id="statsContainer">
+                <!-- Estadísticas se cargan dinámicamente -->
+            </div>
+        </div>
+
+        <!-- Barra de herramientas -->
+        <div class="toolbar">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="🔍 Buscar reglas por ID, nombre o condición...">
+            </div>
+            <div class="filters">
+                <select id="severityFilter">
+                    <option value="">Todas las severidades</option>
+                    <option value="error">❌ Error</option>
+                    <option value="warning">⚠️ Advertencia</option>
+                    <option value="info">📄 Información</option>
+                </select>
+                <select id="priorityFilter">
+                    <option value="">Todas las prioridades</option>
+                    <option value="high">🔴 Alta (1-10)</option>
+                    <option value="medium">🟡 Media (11-50)</option>
+                    <option value="low">🟢 Baja (51-100)</option>
+                </select>
+            </div>
+            <div>
+                <a href="/rules/new" class="btn btn-success">➕ Nueva Regla</a>
+                <button onclick="refreshRules()" class="btn btn-secondary">🔄 Actualizar</button>
+            </div>
+        </div>
+
+        <!-- Tabla de reglas -->
+        <div id="rulesContainer">
+            <div class="loading">
+                <p>⏳ Cargando reglas...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para editar regla -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>✏️ Editar Regla</h2>
+            <form id="editForm">
+                <input type="hidden" id="editRuleId">
+                
+                <div style="margin-bottom: 15px;">
+                    <label>Nombre:</label>
+                    <input type="text" id="editName" style="width: 100%; padding: 8px; margin-top: 5px;">
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label>Condición:</label>
+                    <textarea id="editCondition" rows="3" style="width: 100%; padding: 8px; margin-top: 5px;"></textarea>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label>Acción:</label>
+                    <input type="text" id="editAction" style="width: 100%; padding: 8px; margin-top: 5px;">
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label>Prioridad:</label>
+                    <input type="number" id="editPriority" min="1" max="100" style="width: 100%; padding: 8px; margin-top: 5px;">
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label>Severidad:</label>
+                    <select id="editSeverity" style="width: 100%; padding: 8px; margin-top: 5px;">
+                        <option value="info">📄 Información</option>
+                        <option value="warning">⚠️ Advertencia</option>
+                        <option value="error">❌ Error</option>
+                    </select>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <label>Explicación:</label>
+                    <textarea id="editExplanation" rows="2" style="width: 100%; padding: 8px; margin-top: 5px;"></textarea>
+                </div>
+                
+                <div style="text-align: right;">
+                    <button type="button" onclick="closeModal()" class="btn btn-secondary">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">💾 Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let allRules = [];
+        let filteredRules = [];
+
+        // Cargar reglas al iniciar
+        document.addEventListener('DOMContentLoaded', function() {
+            loadRules();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Búsqueda en tiempo real
+            document.getElementById('searchInput').addEventListener('input', filterRules);
+            document.getElementById('severityFilter').addEventListener('change', filterRules);
+            document.getElementById('priorityFilter').addEventListener('change', filterRules);
+
+            // Modal
+            document.querySelector('.close').addEventListener('click', closeModal);
+            document.getElementById('editForm').addEventListener('submit', saveEditedRule);
+            
+            // Cerrar modal al hacer clic fuera
+            window.addEventListener('click', function(event) {
+                const modal = document.getElementById('editModal');
+                if (event.target === modal) {
+                    closeModal();
+                }
+            });
+        }
+
+        async function loadRules() {
+            try {
+                const response = await fetch('/api/rules');
+                if (!response.ok) throw new Error('Error cargando reglas');
+                
+                const data = await response.json();
+                allRules = data.rules || [];
+                
+                displayStats(data.stats || {});
+                filterRules();
+            } catch (error) {
+                document.getElementById('rulesContainer').innerHTML = `
+                    <div class="empty-state">
+                        <h3>❌ Error al cargar reglas</h3>
+                        <p>${error.message}</p>
+                        <button onclick="loadRules()" class="btn btn-primary">Reintentar</button>
+                    </div>
+                `;
+            }
+        }
+
+        function displayStats(stats) {
+            const statsContainer = document.getElementById('statsContainer');
+            statsContainer.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${stats.total || 0}</div>
+                    <div class="stat-label">Total Reglas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${(stats.severity_distribution && stats.severity_distribution.error) || 0}</div>
+                    <div class="stat-label">Errores</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${(stats.severity_distribution && stats.severity_distribution.warning) || 0}</div>
+                    <div class="stat-label">Advertencias</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${stats.backups_available || 0}</div>
+                    <div class="stat-label">Backups</div>
+                </div>
+            `;
+        }
+
+        function filterRules() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const severityFilter = document.getElementById('severityFilter').value;
+            const priorityFilter = document.getElementById('priorityFilter').value;
+
+            filteredRules = allRules.filter(rule => {
+                // Filtro de búsqueda
+                const matchesSearch = !searchTerm || 
+                    rule.id.toLowerCase().includes(searchTerm) ||
+                    rule.name.toLowerCase().includes(searchTerm) ||
+                    rule.condition.toLowerCase().includes(searchTerm);
+
+                // Filtro de severidad
+                const matchesSeverity = !severityFilter || rule.severity === severityFilter;
+
+                // Filtro de prioridad
+                let matchesPriority = true;
+                if (priorityFilter === 'high') matchesPriority = rule.priority <= 10;
+                else if (priorityFilter === 'medium') matchesPriority = rule.priority > 10 && rule.priority <= 50;
+                else if (priorityFilter === 'low') matchesPriority = rule.priority > 50;
+
+                return matchesSearch && matchesSeverity && matchesPriority;
+            });
+
+            displayRules();
+        }
+
+        function displayRules() {
+            const container = document.getElementById('rulesContainer');
+
+            if (filteredRules.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>📝 No se encontraron reglas</h3>
+                        <p>Ajusta los filtros o agrega una nueva regla.</p>
+                        <a href="/rules/new" class="btn btn-success">➕ Agregar Primera Regla</a>
+                    </div>
+                `;
+                return;
+            }
+
+            const tableHTML = `
+                <table class="rules-table">
+                    <thead>
+                        <tr>
+                            <th>ID / Nombre</th>
+                            <th>Condición</th>
+                            <th>Acción</th>
+                            <th>Prioridad</th>
+                            <th>Severidad</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${filteredRules.map(rule => `
+                            <tr>
+                                <td>
+                                    <div class="rule-id">${rule.id}</div>
+                                    <div class="rule-name">${rule.name}</div>
+                                </td>
+                                <td>
+                                    <div class="rule-condition" title="${rule.condition}">
+                                        ${rule.condition}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="rule-action" title="${rule.action}">
+                                        ${rule.action}
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="priority-badge ${getPriorityClass(rule.priority)}">
+                                        ${rule.priority}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="severity-badge severity-${rule.severity}">
+                                        ${getSeverityIcon(rule.severity)} ${rule.severity}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="actions">
+                                        <button onclick="editRule('${rule.id}')" class="btn btn-warning" title="Editar">
+                                            ✏️
+                                        </button>
+                                        <button onclick="deleteRule('${rule.id}')" class="btn btn-danger" title="Eliminar">
+                                            🗑️
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+
+            container.innerHTML = tableHTML;
+        }
+
+        function getPriorityClass(priority) {
+            if (priority <= 10) return 'priority-high';
+            if (priority <= 50) return 'priority-medium';
+            return 'priority-low';
+        }
+
+        function getSeverityIcon(severity) {
+            switch (severity) {
+                case 'error': return '❌';
+                case 'warning': return '⚠️';
+                case 'info': return '📄';
+                default: return '❓';
+            }
+        }
+
+        function editRule(ruleId) {
+            const rule = allRules.find(r => r.id === ruleId);
+            if (!rule) return;
+
+            document.getElementById('editRuleId').value = rule.id;
+            document.getElementById('editName').value = rule.name;
+            document.getElementById('editCondition').value = rule.condition;
+            document.getElementById('editAction').value = rule.action;
+            document.getElementById('editPriority').value = rule.priority;
+            document.getElementById('editSeverity').value = rule.severity;
+            document.getElementById('editExplanation').value = rule.explanation || '';
+
+            document.getElementById('editModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        async function saveEditedRule(event) {
+            event.preventDefault();
+
+            const ruleId = document.getElementById('editRuleId').value;
+            const updatedData = {
+                name: document.getElementById('editName').value,
+                condition: document.getElementById('editCondition').value,
+                action: document.getElementById('editAction').value,
+                priority: parseInt(document.getElementById('editPriority').value),
+                severity: document.getElementById('editSeverity').value,
+                explanation: document.getElementById('editExplanation').value
+            };
+
+            try {
+                const response = await fetch(`/api/rules/${ruleId}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(updatedData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('✅ ' + result.message);
+                    closeModal();
+                    loadRules();
+                } else {
+                    alert('❌ ' + (result.error || 'Error desconocido'));
+                }
+            } catch (error) {
+                alert('❌ Error de conexión: ' + error.message);
+            }
+        }
+
+        async function deleteRule(ruleId) {
+            if (!confirm(`¿Estás seguro de que quieres eliminar la regla "${ruleId}"?\n\nEsta acción no se puede deshacer.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/rules/${ruleId}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('✅ ' + result.message);
+                    loadRules();
+                } else {
+                    alert('❌ ' + (result.error || 'Error desconocido'));
+                }
+            } catch (error) {
+                alert('❌ Error de conexión: ' + error.message);
+            }
+        }
+
+        function refreshRules() {
+            document.getElementById('rulesContainer').innerHTML = `
+                <div class="loading">
+                    <p>⏳ Actualizando reglas...</p>
+                </div>
+            `;
+            loadRules();
+        }
+    </script>
+</body>
+</html>

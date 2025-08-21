@@ -1,0 +1,18 @@
+# Entornos virtuales
+venv/
+env/
+
+# Base de datos
+test.db
+
+# Archivos de entorno
+.env
+
+# Certificados (si hay muchos, mejor no subirlos)
+certificados/
+
+# Archivos de configuración local
+*.py[cod]
+__pycache__/
+*.pyo
+*.pyd

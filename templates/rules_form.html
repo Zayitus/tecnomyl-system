@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Reglas - Sistema Experto</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #34495e;
+        }
+        input[type="text"], 
+        input[type="number"], 
+        select, 
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        .help-text {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+        .examples {
+            background: #ecf0f1;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .examples h4 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+        }
+        .examples ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .examples li {
+            margin-bottom: 5px;
+            color: #2c3e50;
+            font-family: monospace;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            transition: background-color 0.3s;
+        }
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+        .alert {
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .alert-success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .alert-error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .severity-info { color: #17a2b8; }
+        .severity-warning { color: #ffc107; }
+        .severity-error { color: #dc3545; }
+        .required {
+            color: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 Agregar Nueva Regla del Sistema Experto</h1>
+        
+        <!-- Mensajes de estado -->
+        <div id="message"></div>
+        
+        <form id="ruleForm" action="/api/rules" method="post">
+            <!-- ID de Regla -->
+            <div class="form-group">
+                <label for="rule_id">ID de Regla <span class="required">*</span></label>
+                <input type="text" id="rule_id" name="rule_id" required 
+                       placeholder="ej: cert_missing_personal">
+                <div class="help-text">
+                    Identificador único para la regla. Solo letras, números, guiones y guiones bajos.
+                </div>
+            </div>
+
+            <!-- Nombre -->
+            <div class="form-group">
+                <label for="rule_name">Nombre Descriptivo <span class="required">*</span></label>
+                <input type="text" id="rule_name" name="rule_name" required 
+                       placeholder="ej: Certificado Personal Faltante">
+                <div class="help-text">
+                    Nombre legible para identificar la regla en reportes.
+                </div>
+            </div>
+
+            <!-- Condición -->
+            <div class="form-group">
+                <label for="condition">Condición Lógica <span class="required">*</span></label>
+                <textarea id="condition" name="condition" rows="3" required 
+                          placeholder="ej: motivo == 'Licencia Enfermedad Personal' and duracion > 3"></textarea>
+                <div class="help-text">
+                    Expresión que define cuándo se debe aplicar la regla.
+                </div>
+                <div class="examples">
+                    <h4>📋 Variables Disponibles:</h4>
+                    <ul>
+                        <li><strong>motivo</strong> - Tipo de ausencia</li>
+                        <li><strong>duracion</strong> - Días de ausencia</li>
+                        <li><strong>ausencias_ultimo_mes</strong> - Ausencias previas</li>
+                        <li><strong>certificate_uploaded</strong> - Si subió certificado</li>
+                        <li><strong>validation_status</strong> - 'validated' o 'provisional'</li>
+                        <li><strong>sector</strong> - Departamento del empleado</li>
+                    </ul>
+                    <h4>🔧 Ejemplos de Condiciones:</h4>
+                    <ul>
+                        <li>motivo == 'ART'</li>
+                        <li>duracion > 5 and not certificate_uploaded</li>
+                        <li>ausencias_ultimo_mes >= 3</li>
+                        <li>motivo in ['ART', 'Licencia Enfermedad Personal']</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Acción -->
+            <div class="form-group">
+                <label for="action">Acción a Ejecutar <span class="required">*</span></label>
+                <input type="text" id="action" name="action" required 
+                       placeholder="ej: add_observacion('Certificado requerido para este tipo de ausencia')">
+                <div class="help-text">
+                    Acción que se ejecuta cuando la condición se cumple.
+                </div>
+                <div class="examples">
+                    <h4>⚡ Acciones Permitidas:</h4>
+                    <ul>
+                        <li><strong>add_observacion('mensaje')</strong> - Agregar observación</li>
+                        <li><strong>mark_sanction()</strong> - Aplicar sanción</li>
+                        <li><strong>require_approval()</strong> - Requiere aprobación</li>
+                        <li><strong>set_fact('nombre', 'valor')</strong> - Establecer dato</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Prioridad -->
+            <div class="form-group">
+                <label for="priority">Prioridad <span class="required">*</span></label>
+                <input type="number" id="priority" name="priority" min="1" max="100" required value="50">
+                <div class="help-text">
+                    Orden de evaluación (1 = mayor prioridad, 100 = menor prioridad).
+                    Reglas con menor número se evalúan primero.
+                </div>
+            </div>
+
+            <!-- Severidad -->
+            <div class="form-group">
+                <label for="severity">Nivel de Severidad <span class="required">*</span></label>
+                <select id="severity" name="severity" required>
+                    <option value="">Seleccionar...</option>
+                    <option value="info" class="severity-info">📄 Información</option>
+                    <option value="warning" class="severity-warning">⚠️ Advertencia</option>
+                    <option value="error" class="severity-error">❌ Error</option>
+                </select>
+                <div class="help-text">
+                    Nivel de importancia del problema detectado por la regla.
+                </div>
+            </div>
+
+            <!-- Explicación -->
+            <div class="form-group">
+                <label for="explanation">Explicación</label>
+                <textarea id="explanation" name="explanation" rows="2" 
+                          placeholder="ej: Las ausencias por enfermedad personal requieren certificado médico después de 3 días."></textarea>
+                <div class="help-text">
+                    Descripción de por qué existe esta regla (opcional pero recomendada).
+                </div>
+            </div>
+
+            <!-- Usuario que crea -->
+            <input type="hidden" name="created_by" value="web_user">
+
+            <!-- Botones -->
+            <div class="btn-group">
+                <button type="submit" class="btn btn-primary">💾 Guardar Regla</button>
+                <button type="button" class="btn btn-secondary" onclick="validateRule()">🔍 Validar</button>
+                <a href="/rules" class="btn btn-secondary">📋 Ver Todas las Reglas</a>
+                <a href="/" class="btn btn-secondary">🏠 Inicio</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Validación en tiempo real
+        function validateRule() {
+            const condition = document.getElementById('condition').value;
+            const action = document.getElementById('action').value;
+            
+            if (!condition.trim()) {
+                showMessage('La condición no puede estar vacía', 'error');
+                return;
+            }
+            
+            if (!action.trim()) {
+                showMessage('La acción no puede estar vacía', 'error');
+                return;
+            }
+            
+            // Validación básica de sintaxis
+            if (!action.includes('(') || !action.includes(')')) {
+                showMessage('La acción debe tener formato: función(argumentos)', 'error');
+                return;
+            }
+            
+            showMessage('✅ Validación básica pasada. Presiona "Guardar" para validación completa.', 'success');
+        }
+        
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.innerHTML = `<div class="alert alert-${type}">${text}</div>`;
+            
+            // Auto-ocultar mensajes de éxito después de 5 segundos
+            if (type === 'success') {
+                setTimeout(() => {
+                    messageDiv.innerHTML = '';
+                }, 5000);
+            }
+        }
+        
+        // Manejo del envío del formulario
+        document.getElementById('ruleForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData);
+            
+            try {
+                const response = await fetch('/api/rules', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showMessage('✅ ' + result.message, 'success');
+                    // Limpiar formulario después del éxito
+                    setTimeout(() => {
+                        this.reset();
+                        document.getElementById('priority').value = '50';
+                    }, 1000);
+                } else {
+                    showMessage('❌ ' + (result.error || 'Error desconocido'), 'error');
+                }
+            } catch (error) {
+                showMessage('❌ Error de conexión: ' + error.message, 'error');
+            }
+        });
+        
+        // Ejemplos dinámicos para motivos
+        const motivosValidos = [
+            'ART', 'Licencia Enfermedad Personal', 'Licencia Enfermedad Familiar',
+            'Licencia por Fallecimiento Familiar', 'Licencia por Matrimonio',
+            'Licencia por Nacimiento', 'Licencia por Paternidad', 'Permiso Gremial'
+        ];
+        
+        // Auto-completar ejemplos al hacer clic en condición
+        document.getElementById('condition').addEventListener('focus', function() {
+            if (!this.value) {
+                this.placeholder = "Ejemplo: motivo == 'ART' and duracion > 3";
+            }
+        });
+        
+        document.getElementById('action').addEventListener('focus', function() {
+            if (!this.value) {
+                this.placeholder = "Ejemplo: add_observacion('Mensaje de observación')";
+            }
+        });
+    </script>
+</body>
+</html>

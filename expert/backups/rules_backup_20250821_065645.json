@@ -1,0 +1,138 @@
+{
+  "rules": [
+    {
+      "id": "cert_missing_critical",
+      "name": "Certificado Faltante - Crítico",
+      "condition": "motivo in ['ART', 'Licencia Enfermedad Personal'] and not certificate_uploaded and duracion > 3",
+      "action": "add_observacion('Certificado médico obligatorio para ausencias > 3 días')",
+      "priority": 1,
+      "severity": "error",
+      "explanation": "Las ausencias por ART o enfermedad personal de más de 3 días requieren certificado médico obligatoriamente."
+    },
+    {
+      "id": "cert_deadline_overdue",
+      "name": "Certificado Vencido",
+      "condition": "certificate_deadline and hours_since(certificate_deadline) > 0 and not certificate_uploaded",
+      "action": "mark_sanction()",
+      "priority": 2,
+      "severity": "error",
+      "explanation": "El plazo para entregar el certificado médico ha vencido, se aplica sanción automática."
+    },
+    {
+      "id": "duration_excessive_art",
+      "name": "Duración Excesiva - ART",
+      "condition": "motivo == 'ART' and duracion > 30",
+      "action": "require_approval()",
+      "priority": 3,
+      "severity": "warning",
+      "activation_condition": "validation_status == 'validated'",
+      "explanation": "Ausencias por ART de más de 30 días requieren aprobación especial de supervisor."
+    },
+    {
+      "id": "frequent_absences_pattern",
+      "name": "Patrón de Ausencias Frecuentes",
+      "condition": "ausencias_ultimo_mes >= 4 or (ausencias_ultimo_mes >= 3 and duracion >= 5)",
+      "action": "add_observacion('Patrón de ausencias frecuentes detectado - Revisar con RRHH')",
+      "priority": 4,
+      "severity": "warning",
+      "explanation": "Se detectó un patrón de ausencias frecuentes que requiere revisión de Recursos Humanos."
+    },
+    {
+      "id": "provisional_employee_extended",
+      "name": "Empleado Provisional - Ausencia Extendida",
+      "condition": "validation_status == 'provisional' and duracion > 3",
+      "action": "add_observacion('Empleado no validado solicitando ausencia extendida - Validar urgente')",
+      "priority": 5,
+      "severity": "warning",
+      "explanation": "Empleados no validados en sistema no pueden solicitar ausencias de más de 3 días sin validación previa."
+    },
+    {
+      "id": "weekend_emergency_art",
+      "name": "ART en Fin de Semana",
+      "condition": "motivo == 'ART' and is_weekend()",
+      "action": "add_observacion('Accidente reportado en fin de semana - Verificar protocolo de emergencia')",
+      "priority": 6,
+      "severity": "info",
+      "explanation": "Los accidentes reportados en fin de semana requieren verificación del protocolo de emergencia."
+    },
+    {
+      "id": "late_night_reporting",
+      "name": "Reporte Nocturno",
+      "condition": "current_hour < 6 or current_hour > 22",
+      "action": "add_observacion('Ausencia reportada fuera del horario laboral - Verificar urgencia')",
+      "priority": 7,
+      "severity": "info",
+      "explanation": "Reportes de ausencia fuera del horario laboral pueden indicar situaciones de emergencia."
+    },
+    {
+      "id": "cert_missing_minor",
+      "name": "Certificado Recomendado",
+      "condition": "motivo == 'Licencia Enfermedad Familiar' and not certificate_uploaded and duracion >= 2",
+      "action": "add_observacion('Se recomienda presentar certificado médico para ausencias familiares')",
+      "priority": 8,
+      "severity": "info",
+      "explanation": "Aunque no es obligatorio, se recomienda certificado médico para ausencias familiares de 2+ días."
+    },
+    {
+      "id": "marriage_documentation",
+      "name": "Documentación Matrimonio",
+      "condition": "motivo == 'Licencia por Matrimonio' and duracion > 5",
+      "action": "add_observacion('Licencia por matrimonio extendida - Verificar acta de matrimonio')",
+      "priority": 9,
+      "severity": "info",
+      "explanation": "Licencias por matrimonio de más de 5 días requieren verificación de documentación."
+    },
+    {
+      "id": "paternity_extended",
+      "name": "Paternidad Extendida",
+      "condition": "motivo == 'Licencia por Paternidad' and duracion > 10",
+      "action": "require_approval()",
+      "priority": 10,
+      "severity": "warning",
+      "explanation": "Licencias por paternidad de más de 10 días requieren aprobación especial."
+    },
+    {
+      "id": "chain_rule_cert_and_duration",
+      "name": "Regla Encadenada - Certificado y Duración",
+      "condition": "rule_cert_missing_critical_executed and duracion > 7",
+      "action": "add_observacion('Ausencia prolongada sin certificado - Escalar a supervisor inmediatamente')",
+      "priority": 11,
+      "severity": "error",
+      "explanation": "Cuando se detecta falta de certificado Y la ausencia es > 7 días, se requiere escalamiento inmediato."
+    },
+    {
+      "id": "comprehensive_risk_assessment",
+      "name": "Evaluación de Riesgo Integral",
+      "condition": "(ausencias_ultimo_mes >= 3 and duracion >= 5) or (motivo == 'ART' and ausencias_ultimo_mes >= 2)",
+      "action": "set_fact('riesgo_empleado', 'alto')",
+      "priority": 12,
+      "severity": "warning",
+      "explanation": "Evaluación integral indica alto riesgo: múltiples ausencias o ART recurrente."
+    },
+    {
+      "id": "test_invalid",
+      "name": "Regla de Prueba",
+      "condition": "motivo === 'ART'",
+      "action": "add_observacion('Regla de prueba disparada')",
+      "priority": 99,
+      "severity": "info",
+      "explanation": "Regla creada para testing del sistema",
+      "created_by": "test_user",
+      "created_at": "2025-08-21T06:55:46.197912"
+    }
+  ],
+  "metadata": {
+    "version": "2.0",
+    "description": "Reglas avanzadas con motor de inferencia",
+    "last_updated": "2025-08-21",
+    "total_rules": 13,
+    "features": [
+      "Encadenamiento de reglas",
+      "Condiciones complejas con operadores lógicos",
+      "Funciones temporales (hours_since, is_weekend)",
+      "Activación condicional de reglas",
+      "Diferentes tipos de acciones",
+      "Niveles de severity configurables"
+    ]
+  }
+}
